@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<info>
+    <id>n8n</id>
+    <name>n8n Workflow Automation</name>
+    <summary>Powerful workflow automation with 400+ integrations</summary>
+    <description><![CDATA[
+n8n is a fair-code workflow automation tool that allows you to automate tasks across different services.
+
+**Features:**
+- 400+ pre-built integrations including Nextcloud
+- Visual workflow builder with drag-and-drop interface
+- Self-hosted and privacy-focused
+- Webhook triggers for real-time automation
+- Execute code in JavaScript, Python, or shell scripts
+- AI capabilities with LLM integrations
+
+**Use Cases:**
+- Sync files between Nextcloud and external services
+- Automate document processing workflows
+- Send notifications on file changes
+- Data transformation and ETL pipelines
+- API integrations with external systems
+
+This ExApp runs n8n as a sidecar container managed by Nextcloud's AppAPI.
+    ]]></description>
+    <version>1.0.0</version>
+    <licence>agpl</licence>
+    <author mail="info@conduction.nl" homepage="https://conduction.nl">Conduction</author>
+    <namespace>ExApp_n8n</namespace>
+    <category>workflow</category>
+    <category>tools</category>
+    <category>integration</category>
+    <website>https://n8n.io</website>
+    <bugs>https://github.com/ConductionNL/n8n-nextcloud/issues</bugs>
+    <repository type="git">https://github.com/ConductionNL/n8n-nextcloud</repository>
+    <screenshot>https://raw.githubusercontent.com/ConductionNL/n8n-nextcloud/main/screenshot.png</screenshot>
+    <dependencies>
+        <nextcloud min-version="30" max-version="33"/>
+    </dependencies>
+
+    <external-app>
+        <docker-install>
+            <registry>ghcr.io</registry>
+            <image>conductionnl/n8n-nextcloud</image>
+            <image-tag>1.0.0</image-tag>
+        </docker-install>
+
+        <routes>
+            <!-- Webhook endpoints for external triggers -->
+            <route>
+                <url>^webhook\/.*</url>
+                <verb>GET,POST,PUT,DELETE</verb>
+                <access_level>PUBLIC</access_level>
+                <headers_to_exclude>[]</headers_to_exclude>
+                <bruteforce_protection>[401]</bruteforce_protection>
+            </route>
+            <!-- Webhook test endpoints -->
+            <route>
+                <url>^webhook-test\/.*</url>
+                <verb>GET,POST,PUT,DELETE</verb>
+                <access_level>USER</access_level>
+            </route>
+            <!-- API endpoints -->
+            <route>
+                <url>^api\/.*</url>
+                <verb>GET,POST,PUT,DELETE,PATCH</verb>
+                <access_level>USER</access_level>
+            </route>
+            <!-- Static assets -->
+            <route>
+                <url>^assets\/.*</url>
+                <verb>GET</verb>
+                <access_level>USER</access_level>
+            </route>
+            <!-- Main UI and all other routes -->
+            <route>
+                <url>.*</url>
+                <verb>GET,POST,PUT,DELETE</verb>
+                <access_level>USER</access_level>
+            </route>
+        </routes>
+
+        <environment-variables>
+            <variable>
+                <name>N8N_EXTERNAL_DATABASE</name>
+                <display-name>External PostgreSQL Database</display-name>
+                <description>Optional: Use external database. Format: postgres://user:pass@host:5432/dbname</description>
+            </variable>
+            <variable>
+                <name>N8N_ENCRYPTION_KEY</name>
+                <display-name>Encryption Key</display-name>
+                <description>Optional: Custom encryption key for credentials (auto-generated if not set)</description>
+            </variable>
+            <variable>
+                <name>N8N_TIMEZONE</name>
+                <display-name>Timezone</display-name>
+                <description>Timezone for scheduled workflows (default: Europe/Amsterdam)</description>
+            </variable>
+        </environment-variables>
+    </external-app>
+</info>
