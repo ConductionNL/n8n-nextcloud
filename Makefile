@@ -31,14 +31,17 @@ run:
 	docker run -it --rm \
 		-e APP_ID=n8n \
 		-e APP_SECRET=dev-secret \
+		-e APP_HOST=0.0.0.0 \
+		-e APP_PORT=23000 \
+		-e APP_PERSISTENT_STORAGE=/data \
 		-e NEXTCLOUD_URL=http://host.docker.internal:8080 \
-		-p 9000:9000 \
+		-p 23000:23000 \
 		-p 5678:5678 \
 		$(REGISTRY)/$(IMAGE_NAME):latest
 
 test:
 	@echo "Testing heartbeat endpoint..."
-	@curl -s http://localhost:9000/heartbeat || echo "Container not running"
+	@curl -s http://localhost:23000/heartbeat || echo "Container not running"
 	@echo ""
 	@echo "Testing n8n health..."
 	@curl -s http://localhost:5678/healthz || echo "n8n not running"

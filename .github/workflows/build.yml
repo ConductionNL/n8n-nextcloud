@@ -76,13 +76,16 @@ jobs:
           docker run -d --name test-container \
             -e APP_ID=n8n \
             -e APP_SECRET=test \
+            -e APP_HOST=0.0.0.0 \
+            -e APP_PORT=23000 \
+            -e APP_PERSISTENT_STORAGE=/data \
             -e NEXTCLOUD_URL=http://localhost:8080 \
-            -p 9000:9000 \
+            -p 23000:23000 \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
           sleep 30
 
           # Test heartbeat
-          curl -f http://localhost:9000/heartbeat || exit 1
+          curl -f http://localhost:23000/heartbeat || exit 1
 
           docker stop test-container

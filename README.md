@@ -6,6 +6,8 @@ A Nextcloud External Application (ExApp) that integrates [n8n](https://n8n.io) w
 
 - **400+ Integrations** - Connect to hundreds of services including Nextcloud
 - **Visual Workflow Builder** - Drag-and-drop interface for creating automations
+- **Automatic User Provisioning** - Nextcloud users are auto-created in n8n on first visit
+- **Seamless Auth** - No separate login required; Nextcloud session maps to n8n session
 - **Webhook Support** - Trigger workflows from external events
 - **Self-hosted & Private** - All data stays on your server
 - **AI Capabilities** - Integrate with LLMs for intelligent workflows
@@ -68,8 +70,11 @@ docker build -t n8n-exapp:dev .
 docker run -it --rm \
     -e APP_ID=n8n \
     -e APP_SECRET=dev-secret \
+    -e APP_HOST=0.0.0.0 \
+    -e APP_PORT=23000 \
+    -e APP_PERSISTENT_STORAGE=/data \
     -e NEXTCLOUD_URL=http://localhost:8080 \
-    -p 9000:9000 \
+    -p 23000:23000 \
     -p 5678:5678 \
     n8n-exapp:dev
 ```
@@ -78,10 +83,7 @@ docker run -it --rm \
 
 ```bash
 # Health check
-curl http://localhost:9000/heartbeat
-
-# Initialize
-curl -X POST http://localhost:9000/init
+curl http://localhost:23000/heartbeat
 ```
 
 ## Architecture
@@ -89,25 +91,30 @@ curl -X POST http://localhost:9000/init
 This ExApp wraps n8n with a FastAPI application that implements the Nextcloud AppAPI lifecycle:
 
 ```
-┌─────────────────────────────────────┐
-│         Nextcloud + AppAPI          │
-└──────────────┬──────────────────────┘
-               │
+┌──────────────────────────────────────┐
+│         Nextcloud + AppAPI           │
+└──────────────┬───────────────────────┘
+               │ AUTHORIZATION-APP-API
                ▼
-┌─────────────────────────────────────┐
-│     n8n ExApp Container             │
-│  ┌───────────────────────────────┐  │
-│  │  FastAPI Wrapper (port 9000)  │  │
-│  │  - /heartbeat                 │  │
-│  │  - /init                      │  │
-│  │  - /enabled                   │  │
-│  │  - /* (proxy to n8n)          │  │
-│  └───────────────┬───────────────┘  │
-│                  │                  │
-│  ┌───────────────▼───────────────┐  │
-│  │    n8n Server (port 5678)     │  │
-│  └───────────────────────────────┘  │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│     n8n ExApp Container              │
+│  ┌────────────────────────────────┐  │
+│  │  FastAPI Wrapper (port 23000)  │  │
+│  │  - /heartbeat                  │  │
+│  │  - /enabled                    │  │
+│  │  - /js/n8n-iframe-loader.js    │  │
+│  │  - /* (proxy + auth to n8n)    │  │
+│  │                                │  │
+│  │  Auth Layer:                   │  │
+│  │  - Auto-setup n8n owner        │  │
+│  │  - Map NC users → n8n users    │  │
+│  │  - Inject n8n-auth cookie      │  │
+│  └───────────────┬────────────────┘  │
+│                  │                   │
+│  ┌───────────────▼────────────────┐  │
+│  │    n8n Server (port 5678)      │  │
+│  └────────────────────────────────┘  │
+└──────────────────────────────────────┘
 ```
 
 ## License
