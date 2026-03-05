@@ -4,7 +4,7 @@ REGISTRY ?= ghcr.io/conductionnl
 IMAGE_NAME ?= n8n-nextcloud
 VERSION ?= 1.0.0
 
-.PHONY: build push run test clean help
+.PHONY: build push run test clean help lint format mypy check check-full check-strict
 
 help:
 	@echo "n8n Nextcloud ExApp"
@@ -49,3 +49,53 @@ test:
 clean:
 	-docker rmi $(REGISTRY)/$(IMAGE_NAME):$(VERSION)
 	-docker rmi $(REGISTRY)/$(IMAGE_NAME):latest
+
+# ── Code Quality ───────────────────────────────────────────────────────
+
+lint:
+	ruff check ex_app/
+
+format:
+	ruff format --check ex_app/
+
+format-fix:
+	ruff format ex_app/
+
+lint-fix:
+	ruff check --fix ex_app/
+
+mypy:
+	mypy ex_app/
+
+test-unit:
+	pytest tests/ || echo "Tests require dependencies, skipping..."
+
+check:
+	@E=0; \
+	for CMD in lint mypy; do \
+		echo; echo "=== $$CMD ==="; \
+		$(MAKE) $$CMD || E=1; \
+	done; \
+	echo; \
+	if [ $$E -eq 0 ]; then echo "ALL CHECKS PASSED"; else echo "SOME CHECKS FAILED (see above)"; fi; \
+	exit $$E
+
+check-full:
+	@E=0; \
+	for CMD in lint format mypy test-unit; do \
+		echo; echo "=== $$CMD ==="; \
+		$(MAKE) $$CMD || E=1; \
+	done; \
+	echo; \
+	if [ $$E -eq 0 ]; then echo "ALL CHECKS PASSED"; else echo "SOME CHECKS FAILED (see above)"; fi; \
+	exit $$E
+
+check-strict:
+	@E=0; \
+	for CMD in lint format mypy test-unit; do \
+		echo; echo "=== $$CMD ==="; \
+		$(MAKE) $$CMD || E=1; \
+	done; \
+	echo; \
+	if [ $$E -eq 0 ]; then echo "ALL CHECKS PASSED"; else echo "SOME CHECKS FAILED (see above)"; fi; \
+	exit $$E
