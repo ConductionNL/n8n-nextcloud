@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="img/app.svg" alt="n8n for Nextcloud logo" width="80" height="80">
+  <img src="img/app-store.svg" alt="n8n for Nextcloud logo" width="80" height="80">
 </p>
 
 <h1 align="center">n8n for Nextcloud</h1>
