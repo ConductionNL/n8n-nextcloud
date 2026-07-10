@@ -26,7 +26,6 @@ from nc_py_api.ex_app import (
 )
 from nc_py_api.ex_app.integration_fastapi import AppAPIAuthMiddleware
 
-
 # ── Logging ─────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.WARNING,
@@ -45,10 +44,7 @@ N8N_PROCESS = None
 # Detect HaRP mode and set proxy prefix accordingly
 APP_ID = os.environ.get("APP_ID", "n8n")
 HARP_ENABLED = bool(os.environ.get("HP_SHARED_KEY"))
-if HARP_ENABLED:
-    PROXY_PREFIX = f"/exapps/{APP_ID}"
-else:
-    PROXY_PREFIX = f"/index.php/apps/app_api/proxy/{APP_ID}"
+PROXY_PREFIX = f"/exapps/{APP_ID}" if HARP_ENABLED else f"/index.php/apps/app_api/proxy/{APP_ID}"
 
 # n8n owner account defaults
 OWNER_EMAIL = "admin@n8n.local"
@@ -74,7 +70,7 @@ def _load_users_storage() -> None:
     global USERS_STORAGE
     path = _users_file_path()
     if os.path.exists(path):
-        with open(path, "r") as f:
+        with open(path) as f:
             USERS_STORAGE = json.load(f)
         LOGGER.info("Loaded %d users from storage", len(USERS_STORAGE))
     else:
@@ -136,7 +132,7 @@ def start_n8n():
     if not env.get("N8N_ENCRYPTION_KEY"):
         key_file = f"{storage_path}/.encryption_key"
         if os.path.exists(key_file):
-            with open(key_file, "r") as f:
+            with open(key_file) as f:
                 env["N8N_ENCRYPTION_KEY"] = f.read().strip()
         else:
             env["N8N_ENCRYPTION_KEY"] = secrets.token_hex(32)
@@ -154,8 +150,12 @@ def start_n8n():
         stderr=subprocess.STDOUT,
     )
 
+    stdout = N8N_PROCESS.stdout
+
     def log_output():
-        for line in N8N_PROCESS.stdout:
+        if stdout is None:
+            return
+        for line in stdout:
             LOGGER.info("[n8n] %s", line.decode().strip())
 
     threading.Thread(target=log_output, daemon=True).start()
@@ -194,6 +194,7 @@ async def wait_for_n8n(timeout: int = 90) -> bool:
 
 # ── n8n Authentication ─────────────────────────────────────────────
 
+
 def _extract_cookie(response: httpx.Response) -> str:
     """Extract the n8n-auth cookie value from a response."""
     for header_value in response.headers.get_list("set-cookie"):
@@ -216,9 +217,7 @@ async def _n8n_needs_setup() -> bool:
                     await asyncio.sleep(2)
                     continue
                 data = resp.json().get("data", {})
-                return data.get("userManagement", {}).get(
-                    "showSetupOnFirstLoad", True
-                )
+                return bool(data.get("userManagement", {}).get("showSetupOnFirstLoad", True))
         except (json.JSONDecodeError, httpx.RequestError) as exc:
             LOGGER.debug("Settings not ready (attempt %d): %s", attempt, exc)
             await asyncio.sleep(2)
@@ -313,6 +312,7 @@ async def initialize_n8n() -> None:
 
 
 # ── User Provisioning ─────────────────────────────────────────────
+
 
 def _get_nc_username(request: Request) -> str:
     """Extract the Nextcloud username from the AUTHORIZATION-APP-API header."""
@@ -685,7 +685,7 @@ async def proxy(request: Request, path: str):
     except httpx.RequestError as e:
         LOGGER.error("Proxy error: %s", str(e))
         return JSONResponse(
-            {"error": f"Proxy error: {str(e)}"},
+            {"error": f"Proxy error: {e!s}"},
             status_code=502,
         )
 
