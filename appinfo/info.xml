@@ -20,9 +20,9 @@ This is an ExApp (External Application) - Nextcloud will automatically manage th
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <category>tools</category>
     <category>integration</category>
-    <website>https://github.com/ConductionNL/openregister</website>
-    <bugs>https://github.com/ConductionNL/openregister/issues</bugs>
-    <repository>https://github.com/ConductionNL/openregister</repository>
+    <website>https://github.com/ConductionNL/n8n-nextcloud</website>
+    <bugs>https://github.com/ConductionNL/n8n-nextcloud/issues</bugs>
+    <repository>https://github.com/ConductionNL/n8n-nextcloud</repository>
 
     <dependencies>
         <nextcloud min-version="30" max-version="34"/>
