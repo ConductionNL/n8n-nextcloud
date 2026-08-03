@@ -12,6 +12,8 @@ jobs:
   python-checks:
     name: ${{ matrix.check.name }}
     runs-on: ubuntu-latest
+    # Ruff/Mypy checks observed at ~0.4 min; 20 is a loose upper bound.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
